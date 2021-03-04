@@ -90,6 +90,10 @@ impl<T: Ord> BinaryTree<T> {
     pub fn iter(&mut self) -> Iter<T> {
         Iter{current: &self.head, stack: vec![]}
     }
+
+    pub fn into_iter(self) -> IntoIter<T>{
+        IntoIter{current: self.head, stack: vec![]}
+    }
 }
 
 fn delete_node<T: Ord>(link: &mut Link<T>) {
@@ -155,6 +159,25 @@ impl<'a, T> Iterator for  Iter<'a, T> {
     }
 }
 
+pub struct IntoIter<T> {
+    current: Link<T>,
+    stack: Vec<Box<Node<T>>>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(mut node) = self.current.take() {
+            self.current = node.left.take();
+            self.stack.push(node);
+        }
+        self.stack.pop().map(|mut node| {
+            self.current = node.right.take();
+            node.value
+        })
+    }
+}
+
 #[test]
 fn binary_tree_test() {
     let mut binary_tree: BinaryTree<i32> = BinaryTree::new();
@@ -169,8 +192,8 @@ fn binary_tree_test() {
     
     binary_tree.delete(&100);
 
-    for value in binary_tree.iter() {
-        println!("{}", *value);
+    for value in binary_tree.into_iter() {
+        println!("{}", value);
     }
 
 }
